@@ -1,0 +1,18 @@
+# Facebook API settings
+apiVersion: v2.10
+accessToken: 
+
+# Fields to be queried for every page (aditional to posts)
+fields:
+  - id
+  - name
+  - fan_count
+
+# Settings for the post query
+post:
+  # yyyy-mm-dd
+  since: "2017-09-01"
+  # Ammount of posts, no more than 100 (Facebook API limits)
+  limit: 10
+  # Include PRIDE and THANKFUL reactions
+  extendedReactions: false

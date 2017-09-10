@@ -1,0 +1,21 @@
+{
+  "name": "fb-page-scrapper",
+  "version": "0.0.1",
+  "description": "Scrap the post of Facebook pages",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Alejandro Ramirez <armzprz@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "fb": "^2.0.0",
+    "yamljs": "^0.3.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.6.1",
+    "eslint-config-airbnb-base": "^12.0.0",
+    "eslint-plugin-import": "^2.7.0"
+  }
+}
