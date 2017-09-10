@@ -10,7 +10,9 @@
   "author": "Alejandro Ramirez <armzprz@gmail.com>",
   "license": "ISC",
   "dependencies": {
+    "bootstrap": "^4.0.0-beta",
     "fb": "^2.0.0",
+    "pug": "^2.0.0-rc.4",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {

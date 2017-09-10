@@ -1,17 +1,20 @@
 const Scrapper = require('./scrapper');
+const StorageController= require('./storage/controller');
+const exportHMTL = require('./io/html');
 const YAML = require('yamljs');
 
 const configuration = YAML.load('./config.yaml');
 const pageList = YAML.load('./pageList.yaml');
 
-// console.log(configuration);
-// console.log(pageList);
-
 const scrapper = new Scrapper(configuration);
+
 scrapper.setPageList(pageList);
 const rawData = scrapper.scrape();
 
+// Must have .html extension
+const path = '';
+
 rawData
   .then(data => {
-    console.log(JSON.stringify(data, null, 2));
+    exportHMTL(path, data);
   });

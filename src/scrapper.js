@@ -58,13 +58,15 @@ class Scrapper {
     const data = await this.fb.api(postId, options);
     delete data.id;
 
+    post.comment_count = data.comments.summary.total_count;
+    
+    delete data.comments;
     const reactions = {};
 
     for(let reaction in data) {
       reactions[reaction] = data[reaction].summary.total_count;
     }
   
-    post.comment_count = data.comments.summary.total_count;
     post.reactions = reactions;
     return post;
   }
