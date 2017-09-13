@@ -12,6 +12,7 @@
   "dependencies": {
     "bootstrap": "^4.0.0-beta",
     "fb": "^2.0.0",
+    "mongoose": "^4.11.11",
     "pug": "^2.0.0-rc.4",
     "yamljs": "^0.3.0"
   },
