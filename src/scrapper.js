@@ -90,8 +90,7 @@ class Scrapper {
             const rawPosts = data.posts.data.filter(post => post.message);
   
             const postPromises = rawPosts.map(post => this.fetchPostInformation(post));
-            const posts = Promise.all(postPromises)
-              .then(postList => postList.map(post => new Post(post)));
+            const posts = Promise.all(postPromises);
 
             return posts
               .then(postList => {
