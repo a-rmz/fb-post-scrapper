@@ -1,17 +1,8 @@
 const FB = require('fb');
+const querystring = require('querystring');
 const Post = require('./schema/Post');
 
-const { numberWithCommas } = require('./utils');
-
-const postsField = options => {
-  let field = 'posts';
-
-  for (let prop in options) {
-    field = `${field}.${prop}(${options[prop]})`;
-  }
-
-  return field;
-}
+const buildPostFields = options => `?${querystring.stringify(options)}`;
 
 const buildFields = (options, posts) => {
   const fields = [];
@@ -27,9 +18,10 @@ const buildFields = (options, posts) => {
 
 class Scrapper {
   constructor(configuration) {
-    this.fields = buildFields(configuration.fields, configuration.post.fields);
-    this.rawFields = configuration.fields;
-    this.postOptions = configuration.post.fields;
+    this.fields = {
+      page: configuration.page.fields,
+      post: configuration.post.fields
+    };
 
     this.accessToken = configuration.accessToken || '';
     this.apiVersion = configuration.apiVersion || 'v2.10';
@@ -48,6 +40,55 @@ class Scrapper {
 
   setPageList(pageList = []) {
     this.pageList = pageList;
+  }
+
+  async fetchPageInformation(pageId) {
+    const pageOptions = {
+      fields: this.fields.page
+    };
+
+    const data = await this.fb.api(pageId, pageOptions); 
+    const posts = await this.fetchPosts(pageId);
+    console.log(posts);
+
+    const pageData = {
+      posts,
+      page: pageId,
+      name: data.name,
+      likes: data.fan_count
+     };
+      
+    return pageData;
+  }
+
+  async fetchPosts(pageId) {
+    let posts = [];
+
+    let data = await this.fb.api(`${pageId}/posts${buildPostFields(this.fields.post)}`);
+
+    do {
+      const rawPosts = data.data.filter(post => post.message);
+
+      const fetchedPosts = await Promise.all(
+        rawPosts.map(post => this.fetchPostInformation(post))
+      );
+      posts = posts.concat(fetchedPosts);
+      
+      const after = data.paging.cursors.after;
+      this.fields.post.after = after;
+
+      data = await this.fb.api(`${pageId}/posts${buildPostFields(this.fields.post)}`);
+    } while (data.paging.next);
+
+    return posts;
+  }
+
+  fetchComments(postId) {
+    
+  }
+
+  fetchCommentInformation(commentId) {
+
   }
 
   async fetchPostInformation(post) {
@@ -87,50 +128,55 @@ class Scrapper {
     }
   
     post.reactions = reactions;
+
+    post.comments = await this.fetchComments(postId);
     return post;
   }
 
   async scrape() {
-    const options = {
-      fields: this.fields
-    }
+    const rawData = await Promise.all(
+      this.pageList.map(async page => this.fetchPageInformation(page))
+    );
 
-    const rawData = this.pageList.map(async page => {
-      let data = await this.fb.api(page, options);
-      const pageData = {
-        page,
-        posts: [],
-        name: data.name,
-        likes: data.fan_count,
-      };
+    console.log(rawData);
 
-      let posts = [];
 
-      do {
-        if (data.posts) {
-          const rawPosts = data.posts.data.filter(post => post.message);
+    // const rawData = this.pageList.map(async page => {
+      // let data = await this.fb.api(page, options);
+      // const pageData = {
+        // page,
+        // posts: [],
+        // name: data.name,
+        // likes: data.fan_count,
+      // };
 
-          const fetchedPosts = await Promise.all(
-            rawPosts.map(post => this.fetchPostInformation(post))
-          );
+      // let posts = [];
 
-          posts = posts.concat(fetchedPosts);
-        }
+      // do {
+        // if (data.posts) {
+          // const rawPosts = data.posts.data.filter(post => post.message);
+
+          // const fetchedPosts = await Promise.all(
+            // rawPosts.map(post => this.fetchPostInformation(post))
+          // );
+
+          // posts = posts.concat(fetchedPosts);
+        // }
         
-        const next = data.posts.paging.cursors.after;
-        const postOptions = this.postOptions;
-        postOptions.after = next;
-        options.fields = buildFields(this.rawFields, postOptions);
-        data = await this.fb.api(page, options);
+        // const next = data.posts.paging.cursors.after;
+        // const postOptions = this.postOptions;
+        // postOptions.after = next;
+        // options.fields = buildFields(this.rawFields, postOptions);
+        // data = await this.fb.api(page, options);
 
-      } while (data.posts.paging.next);
+      // } while (data.posts.paging.next);
 
-      pageData.posts = posts;
-      
-      return pageData;
-    });
+      // pageData.posts = posts;
+     
+      // return pageData;
+    // });
 
-    return Promise.all(rawData);
+    // return Promise.all(rawData);
   }
 }
 
