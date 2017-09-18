@@ -1,10 +1,22 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+const reactionsSchema = require('./Reactions');
+
 const commentSchema = new Schema({
   id: {
     type: String,
     required: true
+  },
+  author: {
+    id: {
+      type: String,
+      required: true
+    },
+    name: {
+      type: String,
+      required: true
+    }
   },
   text: {
     type: String,
@@ -14,34 +26,10 @@ const commentSchema = new Schema({
     type: Date,
     required: true
   },
-  commentCount: Number,
-  reactions: {
-    like: {
-      type: Number,
-      required: true
-    },
-    love: {
-      type: Number,
-      required: true
-    },
-    wow: {
-      type: Number,
-      required: true
-    },
-    haha: {
-      type: Number,
-      required: true
-    },
-    sad: {
-      type: Number,
-      required: true
-    },
-    angry: {
-      type: Number,
-      required: true
-    },
-    thankful: Number,
-    pride: Number
+  reactionHistory: {
+    type: [reactionsSchema],
+    default: [],
+    required: true
   }
 });
 
