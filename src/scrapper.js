@@ -3,23 +3,42 @@ const Post = require('./schema/Post');
 
 const { numberWithCommas } = require('./utils');
 
+const postsField = options => {
+  let field = 'posts';
+
+  for (let prop in options) {
+    field = `${field}.${prop}(${options[prop]})`;
+  }
+
+  return field;
+}
+
+const buildFields = (options, posts) => {
+  const fields = [];
+  
+  for (let prop in options) {
+    fields.push(options[prop]);
+  }
+
+  fields.push(postsField(posts));
+
+  return fields;
+}
+
 class Scrapper {
   constructor(configuration) {
-    this.fields = configuration.fields || ['name'];
+    this.fields = buildFields(configuration.fields, configuration.post.fields);
+    this.rawFields = configuration.fields;
+    this.postOptions = configuration.post.fields;
+
     this.accessToken = configuration.accessToken || '';
-    this.apiVersion = configuration.apiVersion || 'v2.9';
+    this.apiVersion = configuration.apiVersion || 'v2.10';
     this.extendedReactions = configuration.post.extendedReactions || false;
     this.commentCount = configuration.post.commentCount || false;
 
     this.postLimit = configuration.post.limit || 10;
     this.startDate = configuration.post.since || null;
 
-    let postsField = `posts.limit(${this.postLimit})`;
-    if (this.startDate) {
-      postsField = `${postsField}.since(${this.startDate})`;
-    }
-    this.fields.push(postsField);
-  
     // Initialize FB API instance
     this.fb = new FB.Facebook({
       accessToken: this.accessToken,
@@ -76,41 +95,42 @@ class Scrapper {
       fields: this.fields
     }
 
-    const promises = this.pageList.map(page => {
-      return this.fb.api(page, options)
-        .then(data => {
-          const pageData = {
-            page,
-            posts: [],
-            name: data.name,
-            likes: data.fan_count,
-          };
+    const rawData = this.pageList.map(async page => {
+      let data = await this.fb.api(page, options);
+      const pageData = {
+        page,
+        posts: [],
+        name: data.name,
+        likes: data.fan_count,
+      };
 
-          if (data.posts) {
-            const rawPosts = data.posts.data.filter(post => post.message);
-  
-            const postPromises = rawPosts.map(post => this.fetchPostInformation(post));
-            const posts = Promise.all(postPromises);
+      let posts = [];
 
-            return posts
-              .then(postList => {
-                pageData.posts = postList;
-                return pageData;
-              });
-          }
+      do {
+        if (data.posts) {
+          const rawPosts = data.posts.data.filter(post => post.message);
 
-          return pageData;
-        })
-        .catch(err => {
-          console.log(err);
-          return {};
-        });
+          const fetchedPosts = await Promise.all(
+            rawPosts.map(post => this.fetchPostInformation(post))
+          );
 
-      });
+          posts = posts.concat(fetchedPosts);
+        }
+        
+        const next = data.posts.paging.cursors.after;
+        const postOptions = this.postOptions;
+        postOptions.after = next;
+        options.fields = buildFields(this.rawFields, postOptions);
+        data = await this.fb.api(page, options);
 
-    const rawData = Promise.all(promises);
+      } while (data.posts.paging.next);
 
-    return rawData;
+      pageData.posts = posts;
+      
+      return pageData;
+    });
+
+    return Promise.all(rawData);
   }
 }
 
