@@ -1,26 +1,13 @@
 const FB = require('fb');
 const querystring = require('querystring');
-const Post = require('./schema/Post');
 
 const buildPostFields = options => `?${querystring.stringify(options)}`;
-
-const buildFields = (options, posts) => {
-  const fields = [];
-  
-  for (let prop in options) {
-    fields.push(options[prop]);
-  }
-
-  fields.push(postsField(posts));
-
-  return fields;
-}
 
 class Scrapper {
   constructor(configuration) {
     this.fields = {
       page: configuration.page.fields,
-      post: configuration.post.fields
+      post: configuration.post.fields,
     };
 
     this.accessToken = configuration.accessToken || '';
@@ -34,7 +21,7 @@ class Scrapper {
     // Initialize FB API instance
     this.fb = new FB.Facebook({
       accessToken: this.accessToken,
-      version: this.apiVersion
+      version: this.apiVersion,
     });
   }
 
@@ -44,10 +31,10 @@ class Scrapper {
 
   async fetchPageInformation(pageId) {
     const pageOptions = {
-      fields: this.fields.page
+      fields: this.fields.page,
     };
 
-    const data = await this.fb.api(pageId, pageOptions); 
+    const data = await this.fb.api(pageId, pageOptions);
     const posts = await this.fetchPosts(pageId);
     console.log(posts);
 
@@ -55,9 +42,9 @@ class Scrapper {
       posts,
       page: pageId,
       name: data.name,
-      likes: data.fan_count
-     };
-      
+      likes: data.fan_count,
+    };
+
     return pageData;
   }
 
@@ -73,8 +60,8 @@ class Scrapper {
         rawPosts.map(post => this.fetchPostInformation(post))
       );
       posts = posts.concat(fetchedPosts);
-      
-      const after = data.paging.cursors.after;
+
+      const { after } = data.paging.cursors;
       this.fields.post.after = after;
 
       data = await this.fb.api(`${pageId}/posts${buildPostFields(this.fields.post)}`);
@@ -103,7 +90,7 @@ class Scrapper {
       'reactions.type(WOW).limit(0).summary(1).as(wow)',
       'reactions.type(HAHA).limit(0).summary(1).as(haha)',
       'reactions.type(SAD).limit(0).summary(1).as(sad)',
-      'reactions.type(ANGRY).limit(0).summary(1).as(angry)'
+      'reactions.type(ANGRY).limit(0).summary(1).as(angry)',
     ];
 
     if (this.extendedReactions) {
@@ -112,21 +99,21 @@ class Scrapper {
     }
 
     const options = {
-      fields 
+      fields,
     };
 
     const data = await this.fb.api(postId, options);
     delete data.id;
 
     post.comment_count = data.comments.summary.total_count;
-    
+
     delete data.comments;
     const reactions = {};
 
-    for(let reaction in data) {
+    for (let reaction in data) {
       reactions[reaction] = data[reaction].summary.total_count;
     }
-  
+
     post.reactions = reactions;
 
     post.comments = await this.fetchComments(postId);
@@ -176,7 +163,7 @@ class Scrapper {
       // return pageData;
     // });
 
-    // return Promise.all(rawData);
+    return Promise.all(rawData);
   }
 }
 
