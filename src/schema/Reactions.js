@@ -1,39 +1,38 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const Schema = require('mongoose');
 
 const reactionsSchema = new Schema({
- date: {
+  date: {
     type: Date,
-    required: true
+    required: true,
   },
- reactions: {
+  reactions: {
     like: {
       type: Number,
-      required: true
+      required: true,
     },
     love: {
       type: Number,
-      required: true
+      required: true,
     },
     wow: {
       type: Number,
-      required: true
+      required: true,
     },
     haha: {
       type: Number,
-      required: true
+      required: true,
     },
     sad: {
       type: Number,
-      required: true
+      required: true,
     },
     angry: {
       type: Number,
-      required: true
+      required: true,
     },
     thankful: Number,
-    pride: Number
-  }
+    pride: Number,
+  },
 });
 
 module.exports = reactionsSchema;

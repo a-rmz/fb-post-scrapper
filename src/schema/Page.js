@@ -1,19 +1,18 @@
-const mongoose = require('mongoose');
+const { Schema } = require('mongoose');
+
 const postSchema = require('./Post');
 
-const Schema = mongoose.Schema;
-
 const pageSchema = new Schema({
-  id: String,
-  displayName: String,
+  _id: String,
+  name: String,
   fans: [{
     date: Date,
-    count: Number
+    count: Number,
   }],
   posts: {
     type: [postSchema],
-    default: []
-  }
+    default: [],
+  },
 });
 
 module.exports = pageSchema;

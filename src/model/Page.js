@@ -3,42 +3,43 @@ const pageSchema = require('../schema/Page');
 
 const Page = mongoose.model('Page', pageSchema);
 
-const createIfNeeded = (id, page) => {
-   return Page.update(
-      { id: id },
-      page,
-      { upsert: true }
-    );
-}
+const createIfNeeded = page => Page
+  .findOneAndUpdate(
+    { id: page._id },
+    page,
+    {
+      upsert: true,
+      new: true,
+    },
+  );
 
-const appendFanCount = (id, fanCount) => {
-  return Page.update(
-    { id: id },
+const appendFanCount = (id, fanCount) => Page
+  .update(
+    { _id: id },
     {
       $push: {
         fans: [
-          fanCount
-        ]
-      }
+          fanCount,
+        ],
+      },
     },
-    { upsert: true }
+    { upsert: true },
   );
-}
 
-const appendPost = (id, post) => {
-  return Page.update(
-    { id: id },
+const appendPost = (id, post) => Page
+  .update(
+    { _id: id },
     {
       $push: {
         posts: [
-          post
-        ]
-      }
+          post,
+        ],
+      },
     },
-    { upsert: true }
+    { upsert: true },
   );
-}
 
+// Add the extra metods to the model
 Page.createIfNeeded = createIfNeeded;
 Page.appendFanCount = appendFanCount;
 Page.appendPost = appendPost;
