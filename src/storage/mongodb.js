@@ -6,11 +6,11 @@ const dbConfig = YAML.load('./src/config/database.yaml');
 const connect = () => {
   // Use native promises
   mongoose.Promise = global.Promise;
-  const {host, port, dbName} = dbConfig;
-  let connectionString = `mongodb://${host}:${port}/${dbName}`;
-  
+  const { host, port, dbName } = dbConfig;
+  const connectionString = `mongodb://${host}:${port}/${dbName}`;
+
   return mongoose.connect(connectionString, {
-    useMongoClient: true
+    useMongoClient: true,
   });
 };
 

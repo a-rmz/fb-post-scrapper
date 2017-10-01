@@ -1,48 +1,35 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const { Schema } = require('mongoose');
+
+const reactionsSchema = require('./Reactions');
 
 const commentSchema = new Schema({
   id: {
     type: String,
-    required: true
+    required: true,
+  },
+  author: {
+    id: {
+      type: String,
+      required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
   },
   text: {
     type: String,
-    required: true
+    required: true,
   },
   date: {
     type: Date,
-    required: true
+    required: true,
   },
-  commentCount: Number,
-  reactions: {
-    like: {
-      type: Number,
-      required: true
-    },
-    love: {
-      type: Number,
-      required: true
-    },
-    wow: {
-      type: Number,
-      required: true
-    },
-    haha: {
-      type: Number,
-      required: true
-    },
-    sad: {
-      type: Number,
-      required: true
-    },
-    angry: {
-      type: Number,
-      required: true
-    },
-    thankful: Number,
-    pride: Number
-  }
+  reactionHistory: {
+    type: [reactionsSchema],
+    default: [],
+    required: true,
+  },
 });
 
 module.exports = commentSchema;

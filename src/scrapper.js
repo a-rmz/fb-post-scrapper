@@ -1,35 +1,13 @@
 const FB = require('fb');
-const Post = require('./schema/Post');
-
-const { numberWithCommas } = require('./utils');
-
-const postsField = options => {
-  let field = 'posts';
-
-  for (let prop in options) {
-    field = `${field}.${prop}(${options[prop]})`;
-  }
-
-  return field;
-}
-
-const buildFields = (options, posts) => {
-  const fields = [];
-  
-  for (let prop in options) {
-    fields.push(options[prop]);
-  }
-
-  fields.push(postsField(posts));
-
-  return fields;
-}
 
 class Scrapper {
-  constructor(configuration) {
-    this.fields = buildFields(configuration.fields, configuration.post.fields);
-    this.rawFields = configuration.fields;
-    this.postOptions = configuration.post.fields;
+  constructor(configuration, storageController) {
+    this.fields = {
+      page: configuration.page.fields,
+      post: configuration.post.fields,
+    };
+
+    this.storageController = storageController;
 
     this.accessToken = configuration.accessToken || '';
     this.apiVersion = configuration.apiVersion || 'v2.10';
@@ -42,12 +20,37 @@ class Scrapper {
     // Initialize FB API instance
     this.fb = new FB.Facebook({
       accessToken: this.accessToken,
-      version: this.apiVersion
+      version: this.apiVersion,
     });
   }
 
   setPageList(pageList = []) {
     this.pageList = pageList;
+  }
+
+  fetchPageInformation(pageId) {
+    const pageOptions = {
+      fields: this.fields.page,
+    };
+
+    const data = this.fb.api(pageId, pageOptions);
+
+    return data
+      .then(page => this.storageController.savePage(pageId, page))
+      .then(page => this.fetchPosts(page));
+  }
+
+  fetchPosts(page) {
+    console.log('Downloading posts for', page.id);
+    return page;
+  }
+
+  fetchComments(postId) {
+    
+  }
+
+  fetchCommentInformation(commentId) {
+
   }
 
   async fetchPostInformation(post) {
@@ -62,7 +65,7 @@ class Scrapper {
       'reactions.type(WOW).limit(0).summary(1).as(wow)',
       'reactions.type(HAHA).limit(0).summary(1).as(haha)',
       'reactions.type(SAD).limit(0).summary(1).as(sad)',
-      'reactions.type(ANGRY).limit(0).summary(1).as(angry)'
+      'reactions.type(ANGRY).limit(0).summary(1).as(angry)',
     ];
 
     if (this.extendedReactions) {
@@ -71,66 +74,33 @@ class Scrapper {
     }
 
     const options = {
-      fields 
+      fields,
     };
 
     const data = await this.fb.api(postId, options);
     delete data.id;
 
     post.comment_count = data.comments.summary.total_count;
-    
+
     delete data.comments;
     const reactions = {};
 
-    for(let reaction in data) {
+    for (let reaction in data) {
       reactions[reaction] = data[reaction].summary.total_count;
     }
-  
+
     post.reactions = reactions;
+
+    post.comments = await this.fetchComments(postId);
     return post;
   }
 
-  async scrape() {
-    const options = {
-      fields: this.fields
-    }
+  scrape() {
+    const pages = this.pageList.map(page => this.fetchPageInformation(page));
+    const rawPages = Promise.all(pages);
 
-    const rawData = this.pageList.map(async page => {
-      let data = await this.fb.api(page, options);
-      const pageData = {
-        page,
-        posts: [],
-        name: data.name,
-        likes: data.fan_count,
-      };
-
-      let posts = [];
-
-      do {
-        if (data.posts) {
-          const rawPosts = data.posts.data.filter(post => post.message);
-
-          const fetchedPosts = await Promise.all(
-            rawPosts.map(post => this.fetchPostInformation(post))
-          );
-
-          posts = posts.concat(fetchedPosts);
-        }
-        
-        const next = data.posts.paging.cursors.after;
-        const postOptions = this.postOptions;
-        postOptions.after = next;
-        options.fields = buildFields(this.rawFields, postOptions);
-        data = await this.fb.api(page, options);
-
-      } while (data.posts.paging.next);
-
-      pageData.posts = posts;
-      
-      return pageData;
-    });
-
-    return Promise.all(rawData);
+    rawPages
+      .then(data => console.log(data));
   }
 }
 

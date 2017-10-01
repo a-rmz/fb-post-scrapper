@@ -1,4 +1,10 @@
 extends: airbnb-base
 env:
   node: true
+rules:
+  no-console: 1
+  no-await-in-loop: 0
+  arrow-parens: 0
+  no-underscore-dangle: 0
+  class-methods-use-this: 1 
 
